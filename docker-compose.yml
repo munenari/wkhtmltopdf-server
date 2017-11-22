@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  app:
+    build:
+      context: .
+    restart: always
+    volumes:
+     - ".:/data"
+    ports:
+     - "10000:10000"
+    command: /data/bin/wkhtmltopdf-server-linux-amd64 -p 10000

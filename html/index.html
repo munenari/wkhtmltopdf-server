@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <!-- Include external CSS. -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/codemirror.min.css">
+
+    <!-- Include Editor style. -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/froala-editor/2.7.1/css/froala_editor.pkgd.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/froala-editor/2.7.1/css/froala_style.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/froala-editor/2.7.1/css/themes/dark.min.css" rel="stylesheet" type="text/css" />
+  </head>
+
+  <body>
+    <!-- Create a tag that we will use as the editable area. -->
+	<!-- You can use a div tag as well. -->
+	<style>
+		html, body, .parent {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+		.parent {
+			display: flex;
+		}
+		.child {
+			/* display: inline-block; */
+			width: 50%;
+			height: 100%;
+			max-width: 59%;
+			max-height: 100%;
+			margin: 0;
+		}
+		.child .fr-box {
+			height: 100%;
+			max-height: 100%;
+		}
+		.child .fr-wrapper {
+			overflow-y: scroll;
+			/* flex: 1; */
+		}
+	</style>
+	<div class="parent">
+		<div class="child">
+			<textarea></textarea>
+		</div>
+		<object class="child" type="application/pdf"></object>
+	</div>
+
+
+    <!-- Include external JS libs. -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/codemirror.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/mode/xml/xml.min.js"></script>
+
+    <!-- Include Editor JS files. -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/froala-editor/2.7.1/js/froala_editor.pkgd.min.js"></script>
+
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/extjs/6.2.0/ext-modern-all.js"></script>
+    <!-- Initialize the editor. -->
+	<script>
+	$( function ( ) {
+		$( 'textarea' ).froalaEditor( {
+			theme: 'dark'
+		} )
+		var resizeFn = function ( ) {
+			var container = $( '.child .fr-wrapper' );
+			container.css( 'height', window.innerHeight - container.offset( ).top )
+		};
+		$( 'window' ).on( 'load resize', resizeFn )
+		resizeFn( );
+	} );
+	</script>
+	<script>
+		var timer = null;
+		var onChangeBody = function ( e, editor, keyupEvent ) {
+			if ( timer ) {
+				clearTimeout( timer )
+			}
+			timer = setTimeout( function ( ) {
+				var html = editor.html.get( )
+				Ext.Ajax.request( {
+					method: 'post',
+					url: 'gen',
+					binary: true,
+					rawData: html,
+					callback: function ( ) {
+						timer = null
+					},
+					success: function ( result ) {
+						var blob = new Blob( [ result.responseBytes ], {
+							type: 'application/pdf'
+						} )
+						var fileReader = new FileReader( );
+						fileReader.onload = function ( ) {
+							var dataURI = fileReader.result;
+							$( 'object' ).attr( 'data', dataURI );
+						};
+						fileReader.readAsDataURL( blob );
+					}
+				} );
+			}, 1000 );
+		};
+		$( function ( ) {
+			$( 'textarea' ).on( 'froalaEditor.keyup', onChangeBody );
+		} );
+	</script>
+  </body>
+</html>
